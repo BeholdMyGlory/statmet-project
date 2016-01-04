@@ -104,6 +104,15 @@ def simulate_train(graph, t):
                                 obs = 3;
                         else:
                                 obs = 4;
+
+                # Simulera felaktigheter i mätning
+                prob = random.randrange(0, 100);
+                if prob < 5:
+                        print('Some wrong observation made');
+                        wrongObs = obs;
+                        while wrongObs == obs:
+                                wrongObs = random.randrange(1,5);
+                        obs = wrongObs;
                 O.append(obs);
                         
                 for a in range(0,3):
