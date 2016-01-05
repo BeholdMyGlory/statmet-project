@@ -14,7 +14,8 @@ def state_probabilities(G, sigma, O, p=0.05):
             is the neighbour of i at label j.
         sigma (numpy.array): A length n array where sigma[i]
             is the switch setting for node i (1 or 2).
-        O (list): A list of observed signals (1, 2, 3 or 4).
+        O (list): A list of observed signals. 1 = OL, 2 = OR,
+            3 = L0, 4 = R0.
         p (float): The probability of a corrupted signal.
     
     Returns:
@@ -132,7 +133,7 @@ if __name__ == '__main__':
         (2, 0): 4
     }
     
-    current_node, current_label = 4, 2 # after exiting node 4 at label 0
+    current_node, current_label = 4, 2 # after exiting node 4 at label R
     for _ in range(num_observations):
         # the node connected to current_label at current_node
         next_node = G[current_node,current_label]
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     s, O_prob = state_probabilities(G, sigma, O)
     
     predicted_node, predicted_label = numpy.unravel_index(
-        s.argmax(), s .shape)
+        s.argmax(), s.shape)
     print("The predicted final state is ({}, {}) with probability {}.".format(
         predicted_node, "0LR"[predicted_label], s.max()))
     
