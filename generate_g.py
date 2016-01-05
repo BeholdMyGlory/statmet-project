@@ -48,6 +48,51 @@ def generate_graph_2(n):
                                         return np.zeros(1);
         return G;
 
+# Genererar grannlistor där G[s,d] nästa nod från s åt håll d (s inte nödvändigtvis G[G[s,d],d])
+def generate_graph_3(n):
+        G = np.ones((n, 3))*(-1);
+        for i in range(0,n-1):
+                for a in range(0,3):
+                        c = 0;
+                        if(G[i,a] != -1):
+                                continue;
+                        while True:
+                                c = c + 1;
+                                b = random.randrange(i+1, n);
+                                f = random.randrange(0,3);
+                                
+                                q = G[i,0] != b and G[i,1] != b and G[i,2] != b;
+                                if(G[b, f] == -1 and q):
+                                        G[i,a] = b;
+                                        G[b,f] = i;
+                                        break;
+                                elif c == 1000:
+                                        print('Failed to generate graph');
+                                        return np.zeros(1);
+        return G;
+
+# Genererar grannlistor där G[s,d] nästa nod från s åt håll d (s = G[G[s,d],d])
+def generate_graph_4(n):
+        G = np.ones((n, 3))*(-1);
+        for i in range(0,n-1):
+                for a in range(0,3):
+                        c = 0;
+                        if(G[i,a] != -1):
+                                continue;
+                        while True:
+                                c = c + 1;
+                                b = random.randrange(i+1, n);
+                                
+                                q = G[i,0] != b and G[i,1] != b and G[i,2] != b;
+                                if(G[b, a] == -1 and q):
+                                        G[i,a] = b;
+                                        G[b,a] = i;
+                                        break;
+                                elif c == 1000:
+                                        print('Failed to generate graph');
+                                        return np.zeros(1);
+        return G;
+
 # Genererar labels för switcharna. 1 = 0, 2 = L, 3 = R
 def generate_labels_randomly(n):
         l = np.zeros((n, 3));
@@ -76,6 +121,19 @@ def generate_graph_and_settings(n):
         l = generate_labels_randomly(n);
         sig = generate_settings_randomly(n);
         return (n, G, l, sig);
+
+# Genererar graf på annat sätt
+# mode = 1 anger att s inte nödvändigtvis G[G[s,d],d], mode 2 anger s = G[G[s,d],d]
+def generate_graph_and_settings_2(n, mode):
+        G = np.zeros(1);
+        while G.size == 1:
+                if mode == 0:
+                        G = generate_graph_3(n);
+                elif mode == 1:
+                        G = generate_graph_4(n);
+        sig = generate_settings_randomly(n);
+        return (n, G, sig);
+                
 
 # Simulerar tåg med given graf
 def simulate_train(graph, t):
@@ -121,4 +179,48 @@ def simulate_train(graph, t):
                                 actual_path.append(s);
                                 orientation = graph[2][s,a];
                                 break;
+        return (O, actual_path);
+
+# Simulerar tåg med given graf där G[s,d] nästa nod från s åt håll d
+def simulate_train_2(graph, t):
+        O = [];
+        actual_path = [];
+        s = random.randrange(0,int(graph[0]));
+        orientation = random.randrange(0,3);
+        actual_path.append(s);
+        
+        for i in range(0, t-1):
+                # Hitta nästa håll att åka mot
+                # Samt gör observation av hur man åker
+                # obs: OL = 1, OR = 2, L0 = 3, R0 = 4
+                # ext: 0 = 0, 1 = L, 2 = R
+                ext = -1;
+                obs = 0;
+                if orientation == 0:
+                        if graph[2][s] == 0:
+                                obs = 1;
+                                ext = 1;
+                        else:
+                                obs = 2;
+                                ext = 2;
+                else:
+                        ext = 0;
+                        if orientation == 1:
+                                obs = 3;
+                        else:
+                                obs = 4;
+
+                # Simulera felaktigheter i mätning
+                prob = random.randrange(0, 100);
+                if prob < 5:
+                        print('Some wrong observation made');
+                        wrongObs = obs;
+                        while wrongObs == obs:
+                                wrongObs = random.randrange(1,5);
+                        obs = wrongObs;
+                O.append(obs);
+                        
+                s = graph[1][s,ext];
+                actual_path.append(s);
+                orientation = ext;
         return (O, actual_path);
