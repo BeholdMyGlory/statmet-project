@@ -219,8 +219,12 @@ def simulate_train_2(graph, t):
                                 wrongObs = random.randrange(1,5);
                         obs = wrongObs;
                 O.append(obs);
-                        
+
+                s_old = s;
                 s = graph[1][s,ext];
+                for a in range(0,3):
+                        if graph[1][s,a] == s_old:
+                                orientation = a;
+                                break;
                 actual_path.append(s);
-                orientation = ext;
         return (O, actual_path);
