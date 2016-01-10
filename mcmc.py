@@ -1,8 +1,13 @@
+
+import collections
+import itertools
+import math
+import random
+
+import numpy as np
+
 import generate_g
-import state_probabilities
-import numpy as np;
-import random;
-import math;
+from state_probabilities import state_probabilities
 
 # Genererar graf och data
 def generate_graph_and_paths(n, t, d):
@@ -21,45 +26,48 @@ def calculate_sigma_probabilities(G, D):
     sig_prob = dict();
     sig = np.ones(G.shape[0]);
 
+def sample_sigma(old_sigma=None, n=None):
+    n = n or old_sigma.shape[0]
+    return np.random.randint(low=1, high=3, size=n)
+
+def mcmc_chain(G, D, sig_prob=None):
+    sig_prob = sig_prob if sig_prob is not None else dict()
+
+    calculate_probability = lambda sigma: sum(
+        state_probabilities(G, sigma, O)[1] for O in D)
+
+    sample = sample_sigma(n=G.shape[0])
+    prob = calculate_probability(sample)
+    sig_prob[tuple(sample)] = prob
+
+    while True:
+        new_sample = sample_sigma(sample)
+        try:
+            new_prob = sig_prob[tuple(new_sample)]
+        except KeyError:
+            new_prob = calculate_probability(new_sample)
+            sig_prob[tuple(new_sample)] = new_prob
+
+        alpha = math.exp(new_prob - prob)
+
+        r = min(1, alpha)
+        u = random.random()
+
+        if u < r:
+            sample = new_sample
+            prob = new_prob
+
+        yield sample
+
 # Beräknar mcmcn av sig
 def sig_mcmc(G, D, t):
     # Initiera kön med 1000 slumpvis utvalda samples
     # Vore bättre om queue innehöll alla möjliga sigman
-    sig_prob = dict();
-    sig_count = dict();
+    sig_count = collections.defaultdict(int)
 
-    n = G.shape[0];
-    x = np.random.randint(low=1, high=3, size=n);
+    chain = mcmc_chain(G, D)
 
-    for _ in range(0,t):
-        if not tuple(x) in sig_prob:
-            p = 0;
-            for i in range(0,len(D)):
-                _, O_prob = state_probabilities.state_probabilities(G, x, D[i]);
-                p += O_prob;
-            sig_prob[tuple(x)] = p;
-            sig_count[tuple(x)] = 0;
-            
-        xp = np.random.randint(low=1, high=3, size=n);
-        if not tuple(xp) in sig_prob:
-            p = 0;
-            for i in range(0,len(D)):
-                _, O_prob = state_probabilities.state_probabilities(G, xp, D[i]);
-                p += O_prob;
-            sig_prob[tuple(xp)] = p;
-            sig_count[tuple(xp)] = 0;
+    for sample in itertools.islice(chain, t):
+        sig_count[tuple(sample)] += 1
 
-        # Borde vi ha p*(xs)/p*(x) också?
-        alpha = math.exp(sig_prob[tuple(xp)] - sig_prob[tuple(x)]);
-
-        r = min(1, alpha);
-        u = random.random();
-
-        if(u < r):
-            x = xp;
-            
-        if not tuple(x) in sig_count:
-            sig_count[tuple(x)] = 0;
-        sig_count[tuple(x)] += 1;
-        
-    return sig_count, t #sig_prob, sig_count;
+    return sig_count, t
