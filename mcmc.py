@@ -38,7 +38,7 @@ def sig_mcmc(G, D, t):
                 _, O_prob = state_probabilities.state_probabilities(G, x, D[i]);
                 p += O_prob;
             sig_prob[tuple(x)] = p;
-            sig_count[tuple(x)] = 1;
+            sig_count[tuple(x)] = 0;
             
         xp = np.random.randint(low=1, high=3, size=n);
         if not tuple(xp) in sig_prob:
@@ -47,10 +47,10 @@ def sig_mcmc(G, D, t):
                 _, O_prob = state_probabilities.state_probabilities(G, xp, D[i]);
                 p += O_prob;
             sig_prob[tuple(xp)] = p;
-            sig_count[tuple(xp)] = 1;
+            sig_count[tuple(xp)] = 0;
 
         # Borde vi ha p*(xs)/p*(x) också?
-        alpha = math.exp(sig_prob[tuple(x)] - sig_prob[tuple(xp)]);
+        alpha = math.exp(sig_prob[tuple(xp)] - sig_prob[tuple(x)]);
 
         r = min(1, alpha);
         u = random.random();
