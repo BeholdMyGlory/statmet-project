@@ -62,4 +62,4 @@ def sig_mcmc(G, D, t):
             sig_count[tuple(x)] = 0;
         sig_count[tuple(x)] += 1;
         
-    return sig_prob, sig_count;
+    return sig_count, t #sig_prob, sig_count;

@@ -4,24 +4,12 @@ import collections
 import numpy
 
 import generate_g
+import mcmc
 import state_probabilities
-
-# placeholder
-def mcmc(G, O):
-    nodes = G.shape[0]
-
-    sigmas = collections.defaultdict(int)
-    samples = 0
-    for _ in range(10):
-        sig = tuple(numpy.random.randint(1, 3, nodes))
-        sigmas[sig] += numpy.random.randint(1, 100)
-        samples += sigmas[sig]
-
-    return sigmas, samples
 
 
 def calculate_final_distribution(G, O):
-    sigmas, samples = mcmc(G, O)
+    sigmas, samples = mcmc.sig_mcmc(G, [O], 10000)
 
     s = numpy.zeros(G.shape)
     for sigma, n in sigmas.items():
@@ -84,5 +72,5 @@ def observations_needed(max_nodes=100, runs=50):
 
 
 if __name__ == '__main__':
-    #run_experiment()
-    observations_needed()
+    run_experiment()
+    #observations_needed()
