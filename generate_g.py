@@ -21,8 +21,12 @@ def generate_graph(n):
                     G[b, f] = i
                     break
                 elif c == 1000:
-                    print('Failed to generate graph')
+                    print('Failed to generate graph');
                     return np.zeros(1)
+    for a in range(0,3):
+        if G[n-1, a] == -1:
+            print('Failed to generate graph');
+            return np.zeros(1);
     return G
 
 # Genererar graf på annat sätt
