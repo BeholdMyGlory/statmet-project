@@ -6,11 +6,41 @@ import numpy
 import generate_g
 import mcmc
 import state_probabilities
-
+import matplotlib.pyplot as plot
 
 def calculate_final_distribution(G, O):
-    sigmas, samples = mcmc.sig_mcmc(G, [O], 10000)
+    sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, [O], 10000)
 
+    # Sannolikhet för individuella sigman
+    bar1 = sig_ind_prob/samples;
+    bar2 = numpy.ones(G.shape[0]) - bar1;
+
+    ind = numpy.arange(G.shape[0]);
+    p1 = plot.bar(ind, bar1, 0.35, color='r');
+    p2 = plot.bar(ind, bar2, 0.35, color='b', bottom=bar1);
+
+    plot.ylabel('L/R')
+    plot.title('Switch index')
+    plot.legend((p1[0], p2[0]), ('L', 'R'))
+    plot.show();
+
+    # Sannolikhet för samling av sigman
+    bar = numpy.zeros(len(sigmas));
+    label = numpy.zeros(len(sigmas));
+    ind = numpy.arange(len(sigmas));
+    i = 0;
+    for sigma, n in sigmas.items():
+        bar[i] = n/samples;
+        label[i] = mcmc.sigma_hash(sigmas);
+        i += 1;
+    p1 = plot.bar(ind, bar, 0.1, color='black');
+    #plot.xticks(ind+0.1/2., tuple(label));
+    plot.ylabel('Probability of sigma')
+    plot.xlabel('Sigma index')
+    plot.title('Joint probability of sigma')
+    plot.show();
+
+        
     s = numpy.zeros(G.shape)
     for sigma, n in sigmas.items():
         sigma = numpy.array(sigma)
@@ -24,7 +54,48 @@ def calculate_final_distribution(G, O):
 
     return s
 
+def run_sigma_experiment(nodes=20, observations=10, numObservations=10):
+    G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);
+    sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, 10000);
+    
+    # Sannolikhet för individuella sigman
+    bar1 = sig_ind_prob/samples;
+    bar2 = numpy.ones(G.shape[0]) - bar1;
 
+    ind = numpy.arange(G.shape[0]);
+    p1 = plot.bar(ind, bar1, 0.35, color='r');
+    p2 = plot.bar(ind, bar2, 0.35, color='b', bottom=bar1);
+
+    plot.ylabel('L/R')
+    plot.title('Switch index')
+    plot.legend((p1[0], p2[0]), ('L', 'R'))
+    plot.show();
+
+    # Sannolikhet för samling av sigman
+    bar = numpy.zeros(len(sigmas));
+    label = numpy.zeros(len(sigmas));
+    ind = numpy.arange(len(sigmas));
+    i = 0;
+    for sigma, n in sigmas.items():
+        bar[i] = n/samples;
+        label[i] = mcmc.sigma_hash(sigma);
+        i += 1;
+    p1 = plot.bar(ind, bar, 0.1, color='black');
+    plot.xticks(ind+0.1/2., tuple(label));
+    plot.ylabel('Probability of sigma')
+    plot.xlabel('Sigma index')
+    plot.title('Joint probability of sigma')
+    plot.show();
+
+    true_sig_prob = 1;
+    for i in range(0, nodes):
+        if(sig[i] == 1):
+            true_sig_prob *= bar1[i];
+        else:
+            true_sig_prob *= bar2[i];
+
+    print('The probability of guessing the true sigma is {}'.format(true_sig_prob));
+    
 def run_experiment(nodes=20, observations=10):
     G, sigma = generate_g.generate_graph_and_settings(nodes)
     O, actual_path = generate_g.simulate_train(G, sigma, observations + 1)

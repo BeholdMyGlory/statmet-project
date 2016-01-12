@@ -20,12 +20,6 @@ def generate_graph_and_paths(n, t, d):
     print('Done!');
     return G, sig, D;
 
-# Inte implementerad; borde beräkna sannolikheten för ALLA sigma
-def calculate_sigma_probabilities(G, D):
-    print('Calculating probabilities for sigma...');
-    sig_prob = dict();
-    sig = np.ones(G.shape[0]);
-
 def sample_sigma(old_sigma=None, n=None):
     n = n or old_sigma.shape[0]
     return np.random.randint(low=1, high=3, size=n)
@@ -61,13 +55,28 @@ def mcmc_chain(G, D, sig_prob=None):
 
 # Beräknar mcmcn av sig
 def sig_mcmc(G, D, t):
-    # Initiera kön med 1000 slumpvis utvalda samples
-    # Vore bättre om queue innehöll alla möjliga sigman
     sig_count = collections.defaultdict(int)
-
+    n = G.shape[0];
+    # sig_individual_prob är sannolikheten att sigma är lika med 1.
+    # p(sig_i = L) = sig_individual_prob[sig_i]/t
+    # p(sig_i = R) = 1 - sig_individual_prob[sig_i]/t
+    sig_individual_prob = np.zeros(n);
+    
     chain = mcmc_chain(G, D)
 
     for sample in itertools.islice(chain, t):
         sig_count[tuple(sample)] += 1
+        for i in range(0, n):
+            sig_individual_prob[i] += sample[i] == 1;
+        
+    return sig_count, sig_individual_prob, t
 
-    return sig_count, t
+def sigma_hash(sigma):
+    d = 0;
+    hash_value = 0;
+    for i in sigma:
+        if i==2:
+            hash_value += pow(2, d);
+        d += 1;
+
+    return hash_value;
