@@ -125,3 +125,42 @@ def sigma_hash(sigma):
         d += 1;
 
     return hash_value;
+
+# Beräknar EPSR
+# sig_ind_prob_array np.array som förhoppningsvis motsvarar y_c
+def simple_convergence_checker(nodes, chain_results_dict_array, sig_ind_prob_array, samples):
+    C = len(chain_results_dict_array);
+    y_dot = np.zeros(nodes);
+
+    # Beräkna y_dot
+    for c in range(0, C):
+        y_dot += sig_ind_prob_array[c,:];
+    y_dot /= C;
+
+    # Beräkna B
+    s = np.zeros(nodes);
+    for i in range(0, C):
+        s += np.power(sig_ind_prob_array[i,:] - y_dot, 2);
+    B = (samples / (C - 1)) * sum(s);
+    
+    # Beräkna W
+    W = 0;
+    for c in range(0, C):
+        tmpSum = 0;
+        for sigma, n in chain_results_dict_array[c].items():
+            tmp = np.zeros(nodes);
+            for i in range(0, nodes):
+                if(sigma[i] == 1):
+                    tmp[i] = 1;
+                else:
+                    tmp[i] = 0;
+            tmpSum += sum(np.power(tmp - sig_ind_prob_array[c], 2))*n;
+        W += (1 / (samples - 1)) * tmpSum;
+    W /= C;
+
+    # Beräkna V_hat
+    V = (samples - 1)*W/samples + (B/samples);
+
+    # Beräkna R_hat:
+    R = math.sqrt(V/W);
+    return R;

@@ -96,7 +96,37 @@ def run_sigma_experiment(nodes=20, observations=10, numObservations=10, trials=1
             true_sig_prob *= bar2[i];
 
     print('The probability of guessing the true sigma is {}'.format(true_sig_prob));
-    print('posterior/prior = {}'.format(true_sig_prob/pow(0.5, G.shape[0])));
+    print('posterior/prior = {}'.format(true_sig_prob/pow(0.5, nodes)));
+
+# Vet inte om denna är särskilt bra eller så, så använd inte
+def evaluate_sigma_mcmc(nodes=20, observations=10, numObservations=10, trials=10000, size=10):
+    results = numpy.zeros(size);
+    for i in range(0, size):
+        G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);
+        sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, trials);
+        bar1 = sig_ind_prob/samples;
+        bar2 = numpy.ones(G.shape[0]) - bar1;
+        true_sig_prob = 1;
+        for i in range(0, nodes):
+            if(sig[i] == 1):
+                true_sig_prob *= bar1[i];
+            else:
+                true_sig_prob *= bar2[i];
+        results[i] = true_sig_prob/pow(0.5, nodes);
+    return results;
+
+def run_convergence_experiment(nodes=20, observations=10, numObservations=10, trials=10000, chainSize=3):
+    G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);
+    chain_results_dict_array = [];
+    sig_ind_prob_array = numpy.zeros((chainSize, nodes));
+    for i in range(0, chainSize):
+        sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, trials);
+        chain_results_dict_array.append(sigmas);
+        sig_ind_prob_array[i,:] = sig_ind_prob;
+        print('Chain {} processed...'.format(i+1));
+    print('Calculating R...');
+    result = mcmc.simple_convergence_checker(nodes, chain_results_dict_array, sig_ind_prob_array, samples);
+    return result;
     
 def run_experiment(nodes=20, observations=10):
     G, sigma = generate_g.generate_graph_and_settings(nodes)
@@ -144,6 +174,6 @@ def observations_needed(max_nodes=100, runs=50):
             failed_runs / (runs + failed_runs)))
 
 
-if __name__ == '__main__':
-    run_experiment()
+#if __name__ == '__main__':
+    #run_experiment()
     #observations_needed()
