@@ -54,10 +54,11 @@ def calculate_final_distribution(G, O):
 
     return s
 
-def run_sigma_experiment(nodes=20, observations=10, numObservations=10):
+def run_sigma_experiment(nodes=20, observations=10, numObservations=10, trials=10000):
     G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);
-    sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, 10000);
-    
+    sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, trials);
+
+    print(sig);
     # Sannolikhet för individuella sigman
     bar1 = sig_ind_prob/samples;
     bar2 = numpy.ones(G.shape[0]) - bar1;
@@ -81,7 +82,7 @@ def run_sigma_experiment(nodes=20, observations=10, numObservations=10):
         label[i] = mcmc.sigma_hash(sigma);
         i += 1;
     p1 = plot.bar(ind, bar, 0.1, color='black');
-    plot.xticks(ind+0.1/2., tuple(label));
+    #plot.xticks(ind+0.1/2., tuple(label), rotation=90);
     plot.ylabel('Probability of sigma')
     plot.xlabel('Sigma index')
     plot.title('Joint probability of sigma')
@@ -95,6 +96,7 @@ def run_sigma_experiment(nodes=20, observations=10, numObservations=10):
             true_sig_prob *= bar2[i];
 
     print('The probability of guessing the true sigma is {}'.format(true_sig_prob));
+    print('posterior/prior = {}'.format(true_sig_prob/pow(0.5, G.shape[0])));
     
 def run_experiment(nodes=20, observations=10):
     G, sigma = generate_g.generate_graph_and_settings(nodes)
