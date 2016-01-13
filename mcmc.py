@@ -34,6 +34,15 @@ def sample_posterior_sigma(sigma_ind_prob, t):
             sigma[i] = 1;
     return sigma;
 
+def switch_probability_posterior(sigma, sigma_ind_prob, t):
+    prob = 1;
+    for i in range(0, sigma.shape[0]):
+        if(sigma[i] == 1):
+            prob *= sigma_ind_prob[i]/t;
+        else:
+            prob *= 1 - sigma_ind_prob[i]/t;
+    return prob
+
 def mcmc_chain(G, D, sig_prob=None):
     sig_prob = sig_prob if sig_prob is not None else dict()
 
@@ -85,6 +94,8 @@ def mcmc_chain_2(G, D, sig_prob=None, sig_ind_prob=None):
             sig_prob[tuple(new_sample)] = new_prob
 
         alpha = math.exp(new_prob - prob)
+        alpha *= switch_probability_posterior(new_sample, sig_ind_prob, t)
+        alpha /= switch_probability_posterior(sample, sig_ind_prob, t)
 
         r = min(1, alpha)
         u = random.random()

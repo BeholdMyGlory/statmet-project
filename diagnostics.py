@@ -7,6 +7,8 @@ import sys
 import generate_g
 import mcmc
 
+import matplotlib.pyplot as plot;
+
 def setup(nodes, burn_in=1000, num_chains=5):
     G, sigma = generate_g.generate_graph_and_settings(nodes)
     if G.min() < 0:
@@ -17,7 +19,7 @@ def setup(nodes, burn_in=1000, num_chains=5):
 
     probs = dict()
 
-    chains = [mcmc.mcmc_chain(G, [O], sig_prob=probs) for _ in range(num_chains)]
+    chains = [mcmc.mcmc_chain_2(G, [O], sig_prob=probs) for _ in range(num_chains)]
 
     for _ in range(burn_in):
         for chain in chains:
@@ -60,7 +62,6 @@ def convergence(nodes=8, window=200):
             print(max(abs(r - 1) for r in R_values))
     except KeyboardInterrupt:
         print("Samples:", i)
-
 
 def jensen_shannon(P, Q, num_P, num_Q):
     entropy = lambda p: - p * math.log2(p) if p > 0 else 0
