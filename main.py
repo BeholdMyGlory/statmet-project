@@ -95,6 +95,7 @@ def run_sigma_experiment(nodes=20, observations=10, numObservations=10, trials=1
         else:
             true_sig_prob *= bar2[i];
 
+    print('Distribution error: {}'.format(mcmc.real_distribution_error(bar1, sig)));
     print('The probability of guessing the true sigma is {}'.format(true_sig_prob));
     print('posterior/prior = {}'.format(true_sig_prob/pow(0.5, nodes)));
 
@@ -107,13 +108,22 @@ def evaluate_sigma_mcmc(nodes=20, observations=10, numObservations=10, trials=10
         bar1 = sig_ind_prob/samples;
         bar2 = numpy.ones(G.shape[0]) - bar1;
         true_sig_prob = 1;
-        for i in range(0, nodes):
-            if(sig[i] == 1):
-                true_sig_prob *= bar1[i];
+        for j in range(0, nodes):
+            if(sig[j] == 1):
+                true_sig_prob *= bar1[j];
             else:
-                true_sig_prob *= bar2[i];
-        results[i] = true_sig_prob/pow(0.5, nodes);
-    return results;
+                true_sig_prob *= bar2[j];
+        results[i] = true_sig_prob;
+    return results, numpy.mean(results), sum(numpy.power(results - numpy.mean(results), 2));
+
+def good_sigma_evaluator(nodes=20, observations=10, numObservations=10, trials=10000, size=10):
+    results = numpy.zeros(size);
+    for i in range(0, size):
+        G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);
+        sigmas, sig_ind_prob, samples = mcmc.sig_mcmc(G, D, trials);
+        bar1 = sig_ind_prob/samples;
+        results[i] = mcmc.real_distribution_error(bar1, sig);
+    return results, numpy.mean(results), numpy.var(results);
 
 def run_convergence_experiment(nodes=20, observations=10, numObservations=10, trials=10000, chainSize=3):
     G, sig, D = mcmc.generate_graph_and_paths(nodes, observations, numObservations);

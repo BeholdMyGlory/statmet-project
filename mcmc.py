@@ -125,7 +125,7 @@ def sig_mcmc(G, D, t):
         for i in range(0, n):
             sig_individual_prob[i] += sample[i] == 1;
         
-    return sig_count, sig_individual_prob, t+200
+    return sig_count, sig_individual_prob, t+200;
 
 def sigma_hash(sigma):
     d = 0;
@@ -175,3 +175,7 @@ def simple_convergence_checker(nodes, chain_results_dict_array, sig_ind_prob_arr
     # Beräkna R_hat:
     R = math.sqrt(V/W);
     return R;
+
+def real_distribution_error(sigma_prob, true_sigma):
+    true_sigma -= 1;
+    return 1 - sum(abs(sigma_prob - true_sigma))/len(sigma_prob);
