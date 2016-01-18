@@ -1,8 +1,6 @@
 import numpy as np
 import random
 
-# Genererar grannlistor där G[s,d] nästa nod från s åt håll d (s inte
-# nödvändigtvis G[G[s,d],d])
 def generate_graph(n):
     G = np.ones((n, 3), dtype=int) * (-1)
     for i in range(0, n - 1):
@@ -29,9 +27,6 @@ def generate_graph(n):
             return np.zeros(1);
     return G
 
-# Genererar graf på annat sätt
-# mode = 1 anger att s inte nödvändigtvis G[G[s,d],d], mode 2 anger s =
-# G[G[s,d],d]
 def generate_graph_and_settings(n):
     G = np.zeros(1)
     while G.size == 1:
@@ -40,7 +35,6 @@ def generate_graph_and_settings(n):
     sigma = np.random.randint(low=1, high=3, size=n)
     return G, sigma
 
-# Simulerar tåg med given graf där G[s,d] nästa nod från s åt håll d
 def simulate_train(G, sigma, t):
     O = []
     actual_path = []
@@ -49,10 +43,6 @@ def simulate_train(G, sigma, t):
     actual_path.append(s)
 
     for i in range(0, t - 1):
-        # Hitta nästa håll att åka mot
-        # Samt gör observation av hur man åker
-        # obs: OL = 1, OR = 2, L0 = 3, R0 = 4
-        # ext: 0 = 0, 1 = L, 2 = R
         ext = -1
         obs = 0
         if orientation == 0:
@@ -65,7 +55,6 @@ def simulate_train(G, sigma, t):
             else:
                 obs = 4
 
-        # Simulera felaktigheter i mätning
         prob = random.randrange(0, 100)
         if prob < 5:
             print('Some wrong observation made')

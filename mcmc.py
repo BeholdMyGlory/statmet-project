@@ -72,11 +72,11 @@ def mcmc_chain(G, D, sig_prob=None):
 
         yield sample
         
-def mcmc_chain_2(G, D, sig_prob=None, sig_ind_prob=None):
+def mcmc_chain_2(G, D, init=100, sig_prob=None, sig_ind_prob=None):
     sig_prob = sig_prob if sig_prob is not None else dict()
     sig_ind_prob = sig_ind_prob if sig_ind_prob is not None else np.ones(G.shape[0]);
-    sig_ind_prob *= 100;
-    t = 200;
+    sig_ind_prob *= init/2;
+    t = init;
 
     calculate_probability = lambda sigma: sum(
         state_probabilities(G, sigma, O)[1] for O in D)
@@ -109,23 +109,34 @@ def mcmc_chain_2(G, D, sig_prob=None, sig_ind_prob=None):
 
         yield sample
         
-# Beräknar mcmcn av sig
+
 def sig_mcmc(G, D, t):
     sig_count = collections.defaultdict(int)
     n = G.shape[0];
-    # sig_individual_prob är sannolikheten att sigma är lika med 1.
-    # p(sig_i = L) = sig_individual_prob[sig_i]/t
-    # p(sig_i = R) = 1 - sig_individual_prob[sig_i]/t
     sig_individual_prob = np.zeros(n);
     
-    chain = mcmc_chain_2(G, D)
+    chain = mcmc_chain(G, D)
 
     for sample in itertools.islice(chain, t):
         sig_count[tuple(sample)] += 1
         for i in range(0, n):
             sig_individual_prob[i] += sample[i] == 1;
         
-    return sig_count, sig_individual_prob, t+200;
+    return sig_count, sig_individual_prob, t;
+
+def sig_mcmc_2(G, D, t, initd):
+    sig_count = collections.defaultdict(int)
+    n = G.shape[0];
+    sig_individual_prob = np.zeros(n);
+    
+    chain = mcmc_chain_2(G, D, initd)
+
+    for sample in itertools.islice(chain, t):
+        sig_count[tuple(sample)] += 1
+        for i in range(0, n):
+            sig_individual_prob[i] += sample[i] == 1;
+        
+    return sig_count, sig_individual_prob, t+initd;
 
 def sigma_hash(sigma):
     d = 0;
@@ -137,24 +148,22 @@ def sigma_hash(sigma):
 
     return hash_value;
 
-# Beräknar EPSR
-# sig_ind_prob_array np.array som förhoppningsvis motsvarar y_c
 def simple_convergence_checker(nodes, chain_results_dict_array, sig_ind_prob_array, samples):
     C = len(chain_results_dict_array);
     y_dot = np.zeros(nodes);
 
-    # Beräkna y_dot
+
     for c in range(0, C):
         y_dot += sig_ind_prob_array[c,:];
     y_dot /= C;
 
-    # Beräkna B
+
     s = np.zeros(nodes);
     for i in range(0, C):
         s += np.power(sig_ind_prob_array[i,:] - y_dot, 2);
     B = (samples / (C - 1)) * sum(s);
     
-    # Beräkna W
+
     W = 0;
     for c in range(0, C):
         tmpSum = 0;
@@ -169,10 +178,10 @@ def simple_convergence_checker(nodes, chain_results_dict_array, sig_ind_prob_arr
         W += (1 / (samples - 1)) * tmpSum;
     W /= C;
 
-    # Beräkna V_hat
+
     V = (samples - 1)*W/samples + (B/samples);
 
-    # Beräkna R_hat:
+
     R = math.sqrt(V/W);
     return R;
 
