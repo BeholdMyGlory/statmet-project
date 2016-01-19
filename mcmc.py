@@ -20,9 +20,17 @@ def generate_graph_and_paths(n, t, d):
     print('Done!');
     return G, sig, D;
 
-def sample_sigma(old_sigma=None, n=None):
+def sample_sigma_uniformly(old_sigma=None, n=None, switches_to_sample=None):
     n = n or old_sigma.shape[0]
-    return np.random.randint(low=1, high=3, size=n)
+    if old_sigma is None or switches_to_sample is None:
+        return np.random.randint(low=1, high=3, size=n)
+    else:
+        # pick `switches_to_sample` random indices to resample
+        indices = random.sample(list(range(len(old_sigma))), switches_to_sample)
+        new_switches = np.random.randint(low=1, high=3, size=len(indices))
+        sigma = old_sigma.copy()
+        sigma[indices] = new_switches
+        return sigma
 
 def sample_posterior_sigma(sigma_ind_prob, t):
     sigma = np.zeros(sigma_ind_prob.shape[0]);
@@ -43,18 +51,18 @@ def switch_probability_posterior(sigma, sigma_ind_prob, t):
             prob *= 1 - sigma_ind_prob[i]/t;
     return prob
 
-def mcmc_chain(G, D, sig_prob=None):
+def mcmc_chain(G, D, sig_prob=None, sampler=sample_sigma_uniformly):
     sig_prob = sig_prob if sig_prob is not None else dict()
 
     calculate_probability = lambda sigma: sum(
         state_probabilities(G, sigma, O)[1] for O in D)
 
-    sample = sample_sigma(n=G.shape[0])
+    sample = sampler(n=G.shape[0])
     prob = calculate_probability(sample)
     sig_prob[tuple(sample)] = prob
 
     while True:
-        new_sample = sample_sigma(sample)
+        new_sample = sampler(sample)
         try:
             new_prob = sig_prob[tuple(new_sample)]
         except KeyError:
@@ -71,7 +79,7 @@ def mcmc_chain(G, D, sig_prob=None):
             prob = new_prob
 
         yield sample
-        
+
 def mcmc_chain_2(G, D, init=100, sig_prob=None, sig_ind_prob=None):
     sig_prob = sig_prob if sig_prob is not None else dict()
     sig_ind_prob = sig_ind_prob if sig_ind_prob is not None else np.ones(G.shape[0]);
@@ -81,7 +89,7 @@ def mcmc_chain_2(G, D, init=100, sig_prob=None, sig_ind_prob=None):
     calculate_probability = lambda sigma: sum(
         state_probabilities(G, sigma, O)[1] for O in D)
 
-    sample = sample_sigma(n=G.shape[0])
+    sample = sample_sigma_uniformly(n=G.shape[0])
     prob = calculate_probability(sample)
     sig_prob[tuple(sample)] = prob
 
