@@ -245,33 +245,39 @@ def observations_needed(max_nodes=100, runs=50):
     """Calculates the number of observations needed
     to get a good estimate of the stop position."""
 
-    for nodes in range(6, max_nodes + 1):
-        total_observations_needed = 0
-        failed_runs = 0
+    failure_probabilities = []
+    with open("observations_needed.dat", 'w') as obs_file:
+        for nodes in range(6, max_nodes + 1, 2):
+            total_observations_needed = 0
+            failed_runs = 0
 
-        i = 0
-        while True:
-            G, sigma = generate_g.generate_graph_and_settings(nodes)
-            O, actual_path = generate_g.simulate_train(G, sigma, 200)
+            i = 0
+            while True:
+                G, sigma = generate_g.generate_graph_and_settings(nodes)
+                O, actual_path = generate_g.simulate_train(G, sigma, 200)
 
-            for observations in range(1, len(O)):
-                s, _ = state_probabilities.state_probabilities(
-                    G, sigma, O[:observations])
-                if s.max() > 0.90:
+                for observations in range(1, len(O)):
+                    s, _ = state_probabilities.state_probabilities(
+                        G, sigma, O[:observations])
+                    if s.max() > 0.90:
+                        break
+                else:
+                    print(s.max())
+                    failed_runs += 1
+                    continue
+
+                total_observations_needed += observations
+                i += 1
+                if i >= runs:
                     break
-            else:
-                print(s.max())
-                failed_runs += 1
-                continue
 
-            total_observations_needed += observations
-            i += 1
-            if i >= runs:
-                break
+            obs_file.write("{}\t{}\n".format(nodes, total_observations_needed / runs))
+            print(nodes, total_observations_needed / runs)
+            failure_probability = failed_runs / (runs + failed_runs)
+            print("Failure probability: {}".format(failure_probability))
+            failure_probabilities.append(failure_probability)
 
-        print(nodes, total_observations_needed / runs)
-        print("Failure probability: {}".format(
-            failed_runs / (runs + failed_runs)))
+    print("Average failure probability: {}".format(sum(failure_probabilities) / len(failure_probabilities)))
 
 
 #if __name__ == '__main__':
