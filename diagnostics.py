@@ -54,17 +54,19 @@ def calculate_sigma(G, O):
     print("Calculated sigma.")
     return probabilities
 
-def convergence(chain_specification, nodes=8, window=200):
+def convergence(chain_specification, data_file, nodes=8, window=200):
     chain_collection = setup(nodes, chain_specification, burn_in=0)
+    all_Rs = []
 
     for chains in chain_collection:
         samples = [[] for chain in chains]
+        delta_Rs = []
         try:
-            for i in range(10000):
+            for i in range(2000):
                 for chain, sample in zip(chains, samples):
                     sample.append(next(chain))
 
-                if i < 10:
+                if i < 10 or i % 10 != 0:
                     continue
 
                 R_values = []
@@ -87,9 +89,20 @@ def convergence(chain_specification, nodes=8, window=200):
 
                     R_values.append(math.sqrt(V / W) if V > 0 and V != W else 1)
 
-                print(max(abs(r - 1) for r in R_values))
+                delta_R = max(abs(r - 1) for r in R_values)
+                print(i, delta_R)
+                delta_Rs.append(delta_R)
         except KeyboardInterrupt:
             print("Samples:", i)
+
+        pyplot.plot(numpy.arange(11, len(delta_Rs)*10 + 11, 10), delta_Rs)
+        all_Rs.append(delta_Rs)
+
+    pyplot.show()
+
+    with open(data_file, 'w') as f:
+        for i, values in enumerate(zip(*all_Rs), 1):
+            f.write("{}\t{}\n".format(i*10 + 1, "\t".join(map(str, values))))
 
 def jensen_shannon(P, Q, num_P, num_Q):
     entropy = lambda p: - p * math.log2(p) if p > 0 else 0
@@ -103,10 +116,11 @@ def jensen_shannon(P, Q, num_P, num_Q):
 
     return jsd
 
-def samples_required(chain_specification, nodes=12, num_samples=50000):
+def samples_required(chain_specification, data_file, nodes=12, num_samples=50000):
     chains, sigma_dist = setup(nodes, chain_specification, burn_in=1000,
                                calculate_actual_distribution=True)
 
+    all_jsds = []
     for test_chains, (num_chains, chain_type, _, kwargs) in zip(chains, chain_specification):
         jsds = []
 
@@ -123,17 +137,28 @@ def samples_required(chain_specification, nodes=12, num_samples=50000):
                         chain_type.__name__, num_chains,
                         "; {} switches resampled".format(kwargs['switches_to_sample'])
                         if kwargs is not None and "switches_to_sample" in kwargs else ""))
+        all_jsds.append(jsds)
 
     pyplot.legend()
     pyplot.show()
 
+    with open(data_file, 'w') as f:
+        for i, values in enumerate(zip(*all_jsds), 1):
+            f.write("{}\t{}\n".format(i, "\t".join(map(str, values))))
+
 if __name__ == '__main__':
+    nodes = 8
     chains = [
+        (1, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {}),
+        (1, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": 1}),
+        (1, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": nodes//4}),
+        (1, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": nodes//2}),
+        (1, mcmc.mcmc_chain_2, None, None),
         (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {}),
         (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": 1}),
-        (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": 8//4}),
-        (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": 8//2}),
+        (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": nodes//4}),
+        (4, mcmc.mcmc_chain, mcmc.sample_sigma_uniformly, {"switches_to_sample": nodes//2}),
         (4, mcmc.mcmc_chain_2, None, None)
     ]
-    convergence(chains)
-    #samples_required(chains)
+    #convergence(chains, "burn_in_16.dat", nodes=nodes)
+    samples_required(chains, "convergence_8.dat", nodes=nodes)
